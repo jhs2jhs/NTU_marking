@@ -9,6 +9,7 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email import encoders
+import CONFIG
 
 doc_level = 0
 current = 'pseudo_code'
