@@ -216,8 +216,7 @@ def print_student_comments_in_seperate_file(file_name_prefix, title, show_score)
 		print "== print_student_comments_in_seperate_file: %s =="%(file_name)
 
 
-def print_student_comments_to_email(file_name_prefix, email_title_prefix):
-	is_test = True
+def print_student_comments_to_email(file_name_prefix, email_title_prefix, is_test, mail_type):
 	for student_id in students:
 		student = students[student_id]
 		student_name = student['student_name']
@@ -246,13 +245,13 @@ def print_student_comments_to_email(file_name_prefix, email_title_prefix):
 		#print email_body
 		if is_test == True:
 			address_to = CONFIG.address_to_test
-			send_email(email_title, email_body, address_to)
+			send_email(mail_type, email_title, email_body, address_to)
 			print "== print_student_comments_to_email: %s =="%(file_name)
 			print "only in test"
-			sys.exit(1)
+			return
 		else:
 			address_to = '%s@ntu.ac.uk'%(student_id)
-			send_email(email_title, email_body, address_to)
+			send_email(mail_type, email_title, email_body, address_to)
 			print "== print_student_comments_to_email: %s =="%(file_name)
 
 part_template = u'''
@@ -272,8 +271,8 @@ Your student_id is <b>%s</b>, and your final grade is <b>%s</b> <br>
 Bellow are your comments details: <br>
 %s
 '''
-def send_email(email_title, email_body, address_to):
-	mail_type = 'gmail' # or ntu
+def send_email(mail_type, email_title, email_body, address_to):
+	#mail_type = 'gmail' # or ntu
 	is_attachment = False
 	if mail_type == 'gmail':
 		smtp_server = 'smtp.gmail.com'
@@ -313,19 +312,24 @@ def send_email(email_title, email_body, address_to):
 	server.quit()
 
 
-
-
-if __name__ == "__main__":
+def main_in_group(doc_name, group_name):
 	doc_level = 0
 	current = 'pseudo_code'
 	student = {}
-	doc_name = './Marking-Group-H.docx'
 	parse_docx(doc_name)
-	print_student_grade_only('H-grade.txt')
-	print_student_comments_in_one_file('H-comments_in_one_file_with_score.docx', 'Web-Based-Programing In-Class test result', True)
-	print_student_comments_in_one_file('H-comments_in_one_file.docx', 'Web-Based-Programing In-Class test result', False)
-	print_student_comments_in_seperate_file('comments/H-', 'Web-Based-Programing In-Class test result', False)
-	print_student_comments_to_email('comments/H-', 'Web-Based-Programing In-Class test result')
+	print_student_grade_only('./output_files/'+group_name+'-grade.txt')
+	print_student_comments_in_one_file('./output_files/'+group_name+'-comments_in_one_file_with_score.docx', 'Web-Based-Programing In-Class test result', True)
+	print_student_comments_in_one_file('./output_files/'+group_name+'-comments_in_one_file.docx', 'Web-Based-Programing In-Class test result', False)
+	print_student_comments_in_seperate_file('./comments/'+group_name+'-', 'Web-Based-Programing In-Class test result', False)
+	### ready to send email
+	send_email_in_test = True
+	mail_type = 'gmail' # or ntu
+	print_student_comments_to_email('./comments/'+group_name+'-', 'Web-Based-Programing In-Class test result', send_email_in_test, mail_type)
+
+
+if __name__ == "__main__":
+	main_in_group('./Marking-Group-H.docx', 'H')
+	main_in_group('./Marking-Group-F.docx', 'F')
 
 
 # todo
