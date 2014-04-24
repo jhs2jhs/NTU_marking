@@ -322,14 +322,14 @@ def main_in_group(doc_name, group_name):
 	print_student_comments_in_one_file('./output_files/'+group_name+'-comments_in_one_file.docx', 'Web-Based-Programing In-Class test result', False)
 	print_student_comments_in_seperate_file('./comments/'+group_name+'-', 'Web-Based-Programing In-Class test result', False)
 	### ready to send email
-	send_email_in_test = True
-	mail_type = 'gmail' # or ntu
+	send_email_in_test = True   ############### make sure you changed here ##################
+	mail_type = 'gmail' # or ntu ############### make sure you changed here ##################
 	print_student_comments_to_email('./comments/'+group_name+'-', 'Web-Based-Programing In-Class test result', send_email_in_test, mail_type)
 
 
 if __name__ == "__main__":
-	main_in_group('./input_files/Marking-Group-H.docx', 'H')
-	main_in_group('./input_files/Marking-Group-F.docx', 'F')
+	main_in_group('./input_files/Marking-Group-H.docx', 'H') ############### make sure you changed here ##################
+	main_in_group('./input_files/Marking-Group-F.docx', 'F') ############### make sure you changed here ##################
 
 
 
