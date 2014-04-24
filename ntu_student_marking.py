@@ -328,13 +328,10 @@ def main_in_group(doc_name, group_name):
 
 
 if __name__ == "__main__":
-	main_in_group('./Marking-Group-H.docx', 'H')
-	main_in_group('./Marking-Group-F.docx', 'F')
+	main_in_group('./input_files/Marking-Group-H.docx', 'H')
+	main_in_group('./input_files/Marking-Group-F.docx', 'F')
 
 
-# todo
-# remove personal info
-# make README.md file
 
 
 

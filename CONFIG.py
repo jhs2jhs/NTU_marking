@@ -6,7 +6,7 @@ gmail_password = 'xxxx'
 
 ## ntu config
 ntu_address_from = 'xxxxxx@ntu.ac.uk'
-ntu_username = 'xxx@gmail.com'
+ntu_username = 'xxx@ntu.ac.uk'
 ntu_password = 'xxxx' 
 
 ##

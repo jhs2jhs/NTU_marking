@@ -52,9 +52,11 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
-*.docx
+comments/*.docx
+input_files/*.docx
+output_files/*.docx
+output_files/*.txt
 
-*.txt
 
 *copy*
 CONFIG_test.py
