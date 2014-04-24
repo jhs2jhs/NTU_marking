@@ -6,8 +6,8 @@ gmail_password = 'xxxx'
 
 ## ntu config
 ntu_address_from = 'xxxxxx@ntu.ac.uk'
-ntu_username = 'xxx@ntu.ac.uk'
-ntu_password = 'xxxx' 
+#ntu_username = 'xxx@ntu.ac.uk' // NTU email server are open without authentication, so no need to provide this
+#ntu_password = 'xxxx' // NTU email server are open without authentication, so no need to provide this
 
 ##
 address_cc = 'xxxx@ntu.ac.uk'

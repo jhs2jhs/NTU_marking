@@ -10,6 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email import encoders
 import CONFIG_test as CONFIG
+#import CONFIG as CONFIG
 
 doc_level = 0
 current = 'pseudo_code'
@@ -284,8 +285,8 @@ def send_email(mail_type, email_title, email_body, address_to):
 		smtp_server = 'smtphost.ntu.ac.uk'
 		smtp_port = 25
 		address_from = CONFIG.ntu_address_from
-		username = CONFIG.ntu_username
-		password = CONFIG.ntu_password
+		#username = CONFIG.ntu_username
+		#password = CONFIG.ntu_password
 	address_cc = CONFIG.address_cc
 	msg = MIMEMultipart('alternative')
 	msg.set_charset('utf-8')
@@ -307,7 +308,10 @@ def send_email(mail_type, email_title, email_body, address_to):
 	server = smtplib.SMTP(smtp_server, smtp_port)
 	server.ehlo()
 	server.starttls()
-	server.login(username, password)
+	if mail_type == 'ntu':
+		print "NTU do not need to login"
+	else:
+		server.login(username, password)
 	server.sendmail(address_from, address_to, msg.as_string())
 	server.quit()
 
@@ -323,7 +327,7 @@ def main_in_group(doc_name, group_name):
 	print_student_comments_in_seperate_file('./comments/'+group_name+'-', 'Web-Based-Programing In-Class test result', False)
 	### ready to send email
 	send_email_in_test = True   ############### make sure you changed here ##################
-	mail_type = 'gmail' # or ntu ############### make sure you changed here ##################
+	mail_type = 'ntu' # or ntu ############### make sure you changed here ##################
 	print_student_comments_to_email('./comments/'+group_name+'-', 'Web-Based-Programing In-Class test result', send_email_in_test, mail_type)
 
 
