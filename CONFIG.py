@@ -11,3 +11,4 @@ ntu_password = 'xxxx'
 
 ##
 address_cc = 'xxxx@ntu.ac.uk'
+address_to_test = 'xxxx@ntu.ac.uk'

@@ -55,3 +55,6 @@ docs/_build/
 *.docx
 
 *.txt
+
+*copy*
+CONFIG_test.py

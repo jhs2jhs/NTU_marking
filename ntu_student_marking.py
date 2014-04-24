@@ -9,7 +9,7 @@ from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.header import Header
 from email import encoders
-import CONFIG
+import CONFIG_test as CONFIG
 
 doc_level = 0
 current = 'pseudo_code'
@@ -245,7 +245,7 @@ def print_student_comments_to_email(file_name_prefix, email_title_prefix):
 		email_title = u'Web-Based-Programing In-Class test results: %s'%(student_id)
 		#print email_body
 		if is_test == True:
-			address_to = 'jianhua.shao@ntu.ac.uk'
+			address_to = CONFIG.address_to_test
 			send_email(email_title, email_body, address_to)
 			print "== print_student_comments_to_email: %s =="%(file_name)
 			print "only in test"
