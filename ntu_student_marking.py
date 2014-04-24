@@ -2,9 +2,16 @@ from docx import *
 from docx.shared import Inches
 import pprint
 import codecs
+import sys
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email import encoders
 
-l = 0
-current = 'p'
+doc_level = 0
+current = 'pseudo_code'
 students = {}
 student = {}
 
@@ -34,337 +41,286 @@ def get_grade(s):
 	if s < 35:
 		return "Fail"
 
-def output_part(doc, p, part_id):
-	#doc.add_heading(part_id, 3)
-	doc.add_paragraph('- '+part_id, 'List2')
-	for pp in p:
-		doc.add_paragraph(pp, style='ListBullet3')
-
-def output(doc, tree, show_score):
-	if not tree.has_key('name'):
-		return
-	doc.add_heading(tree['name'], 1) # name
-	total_s = 0
-	scores = ''
-	for part_id in tree['parts']:
-		part_name = ''
-		if part_id == 1:
-			part_name = 'A'
-			doc.add_heading('Part-'+str(part_name), 2) # part a
-		if part_id == 2:
-			part_name = 'B'
-			doc.add_heading('Part-'+str(part_name), 2) # part a
-		if part_id == 3:
-			part_name = 'C'
-			doc.add_heading('Part-'+str(part_name), 2) # part a
-		if part_id == 4:
-			part_name = 'Overall'
-			doc.add_heading(str(part_name), 2) # part a
-		part = tree['parts'][part_id]
-		p = part['p']
-		j = part['j']
-		s = part['s']
-		s = int(s)
-		scores = scores + ', ' + str(s)
-		total_s = total_s + s
-		output_part(doc, p, 'Pseudo code:')
-		output_part(doc, j, 'JS code:')
-	if (show_score == True):
-		doc.add_heading('Scores = '+scores +' = ' + str(total_s), 3)
-	grade = get_grade(total_s)
-	doc.add_heading('Final grade = '+grade, 3)
-	doc.add_page_break()
-
-def output_txt(doc, tree, show_score):
-	if not tree.has_key('name'):
-		return
-	name_id = tree['name']
-	print '====', tree['name'], tree, '===='
-	name_id = name_id.split('(')
-	name = name_id[0].strip()
-	id = name_id[1].replace(')', '').strip()
-	total_s = 0
-	for part_id in tree['parts']:
-		part = tree['parts'][part_id]
-		s = part['s']
-		s = int(s)
-		total_s = total_s + s
-	grade = get_grade(total_s)
-	doc.write('%s\t%s\t%s\t%s\t\n'%(id, name, grade, total_s))
-
-def output_loop(doc, pas, show_score):
-	for name in pas:
-		pa = pas[name]
-		output(doc, pa, show_score)
-
-def output_excel(doc, tree, show_score):
-	name = ''
-	id = ''
-	grade = ''
-	part_a = ''
-	part_b = ''
-	part_c = ''
-	overall = ''
-	###
-	if not tree.has_key('name'):
-		return
-	##
-	name_id = tree['name']
-	name_id = name_id.split('(')
-	name = name_id[0].strip()
-	id = name_id[1].replace(')', '').strip()
-	##
-	total_s = 0
-	scores = ''
-	for part_id in tree['parts']:
-		part = tree['parts'][part_id]
-		p = part['p']
-		j = part['j']
-		s = part['s']
-		s = int(s)
-		scores = scores + ', ' + str(s)
-		total_s = total_s + s
-		part_name = ''
-		if part_id == 1:
-			part_name = 'A'
-			part_a = part
-		if part_id == 2:
-			part_name = 'B'
-			part_b = part
-		if part_id == 3:
-			part_name = 'C'
-			part_c = part
-		if part_id == 4:
-			part_name = 'Overall'
-			part_g = part
-	if (show_score == True):
-		doc.add_heading('Scores = '+scores +' = ' + str(total_s), 3)
-	grade = get_grade(total_s)
-	##
-	print name, id, total_s, grade, part_a, part_b, part_c, part_g
-
-def check(t, post, doc, show_score):
-	global l, pa, current
-	#print '******', t, post
+def parse_student (t, post):
+	global doc_level, student, current
 	if t == '' and not post == '':
-		l = 0
-		pprint.pprint(pa)
-		print '\n\n\n'
-		print 'name====', post
-		output(doc, pa, show_score)
-		pa = {'parts':{}, 'name': post}
+		doc_level = 0
+		## save previous student into students
+		if not student.has_key('student_id'):
+			#print "student_id empty"
+			#sys.exit(1)
+			print 
+		else:
+			students[student['student_id']] = student
+			#pprint.pprint(student)
+			#print '\n\n\n'
+		## parse name and student id
+		name_id = post
+		name_id = name_id.split('(')
+		studnet_name = name_id[0].strip()
+		student_id = name_id[1].replace(')', '').strip()
+		student = {'parts':{}, 'student_name': studnet_name, 'student_id': student_id}
 	if 'part a:' in t.lower():
-		ss = t.lower().split(':')
-		s = ss[1]
-		l = 1
-		pa['parts'][l] = {'s':s, 'p':[], 'j':[]}
+		score = t.lower().split(':')[1]
+		doc_level = 1
+		student['parts'][doc_level] = {'score':score, 'pseudo_code':[], 'js_code':[]}
 	elif 'part b:' in t.lower():
-		ss = t.lower().split(':')
-		s = ss[1]
-		l = 2
-		pa['parts'][l] = {'s':s, 'p':[], 'j':[]}
+		score = t.lower().split(':')[1]
+		doc_level = 2
+		student['parts'][doc_level] = {'score':score, 'pseudo_code':[], 'js_code':[]}
 	elif 'part c:' in t.lower():
-		ss = t.lower().split(':')
-		s = ss[1]
-		l = 3
-		pa['parts'][l] = {'s':s, 'p':[], 'j':[]}
+		score = t.lower().split(':')[1]
+		doc_level = 3
+		student['parts'][doc_level] = {'score':score, 'pseudo_code':[], 'js_code':[]}
 	elif 'overall:' in t.lower():
-		ss = t.lower().split(':')
-		l = 4
-		pa['parts'][l] = {'s':0, 'p':[], 'j':[]}
+		score = t.lower().split(':')
+		doc_level = 4
+		student['parts'][doc_level] = {'score':0, 'pseudo_code':[], 'js_code':[]}
 	elif 'pseudo code:' in t.lower():
-		current = 'p'
+		current = 'pseudo_code'
 	elif 'js code:' in t.lower():
-		current = 'j'
+		current = 'js_code'
 	elif 'all:' in t.lower() or 'you have therefore' in t.lower():
 		return
 	else:
 		#print t
-		if l == 0:
+		if doc_level == 0:
 			return
 		if t == '':
 			return
-		pa['parts'][l][current].append(t)
+		student['parts'][doc_level][current].append(t)
 
-def check_txt(t, post, doc, show_score):
-	global l, pa, current
-	#print '******', t, post
-	if t == '' and not post == '':
-		l = 0
-		pprint.pprint(pa)
-		print '\n\n\n'
-		print 'name====', post
-		output_txt(doc, pa, show_score)
-		pa = {'parts':{}, 'name': post}
-	if 'part a:' in t.lower():
-		ss = t.lower().split(':')
-		s = ss[1]
-		l = 1
-		pa['parts'][l] = {'s':s, 'p':[], 'j':[]}
-	elif 'part b:' in t.lower():
-		ss = t.lower().split(':')
-		s = ss[1]
-		l = 2
-		pa['parts'][l] = {'s':s, 'p':[], 'j':[]}
-	elif 'part c:' in t.lower():
-		ss = t.lower().split(':')
-		s = ss[1]
-		l = 3
-		pa['parts'][l] = {'s':s, 'p':[], 'j':[]}
-	elif 'overall:' in t.lower():
-		ss = t.lower().split(':')
-		l = 4
-		pa['parts'][l] = {'s':0, 'p':[], 'j':[]}
-	elif 'pseudo code:' in t.lower():
-		current = 'p'
-	elif 'js code:' in t.lower():
-		current = 'j'
-	elif 'all:' in t.lower() or 'you have therefore' in t.lower():
-		return
-	else:
-		#print t
-		if l == 0:
-			return
-		if t == '':
-			return
-		pa['parts'][l][current].append(t)
 
-def check_excel(t, post, doc, show_score):
-	global l, pa, current
-	#print '******', t, post
-	if t == '' and not post == '':
-		l = 0
-		pprint.pprint(pa)
-		print '\n\n\n'
-		print 'name====', post
-		output_excel(doc, pa, show_score)
-		pa = {'parts':{}, 'name': post}
-	if 'part a:' in t.lower():
-		ss = t.lower().split(':')
-		s = ss[1]
-		l = 1
-		pa['parts'][l] = {'s':s, 'p':[], 'j':[]}
-	elif 'part b:' in t.lower():
-		ss = t.lower().split(':')
-		s = ss[1]
-		l = 2
-		pa['parts'][l] = {'s':s, 'p':[], 'j':[]}
-	elif 'part c:' in t.lower():
-		ss = t.lower().split(':')
-		s = ss[1]
-		l = 3
-		pa['parts'][l] = {'s':s, 'p':[], 'j':[]}
-	elif 'overall:' in t.lower():
-		ss = t.lower().split(':')
-		l = 4
-		pa['parts'][l] = {'s':0, 'p':[], 'j':[]}
-	elif 'pseudo code:' in t.lower():
-		current = 'p'
-	elif 'js code:' in t.lower():
-		current = 'j'
-	elif 'all:' in t.lower() or 'you have therefore' in t.lower():
-		return
-	else:
-		#print t
-		if l == 0:
-			return
-		if t == '':
-			return
-		pa['parts'][l][current].append(t)
+def calcualte_score_grade():
+	highest = 0
+	lowest = 0
+	average = 0
+	grades = {}
+	for student_id in students:
+		parts = students[student_id]['parts']
+		score_total = 0
+		for part_id in parts:
+			part_score = parts[part_id]['score']
+			part_score = int(part_score)
+			score_total = score_total + part_score
+		grade = get_grade(score_total)
+		students[student_id]['student_score'] = score_total
+		students[student_id]['student_grade'] = grade
+		## stastic
+		if score_total > highest:
+			highest = score_total
+		if score_total < lowest:
+			lowest = score_total
+		average = average + score_total
+		if not grades.has_key(grade):
+			grades[grade] = {}
+		grades[grade][student_id] = score_total
+	average = average * 1.0 / len(students)
+	print "==== student performance stastics ===="
+	print "Students counts:", len(students)
+	print "Highest:", highest, 'Lowest:', lowest, 'Average:', average
+	for grade in grades:
+		print "Grade:", grade, 'has student counts:', len(grades[grade])
 
-def read_doc(doc_name, save_doc_name, show_score):
+
+def parse_docx(doc_name):
+	pre = ''
+	document = Document(doc_name)
+	for post in document.paragraphs:
+		t = post.text.strip()  ## curent line text
+		parse_student(pre, t)
+		pre = t
+	students[student['student_id']] = student
+	pprint.pprint(students)
+	print "Student counts:", len(students)
+	calcualte_score_grade()
+
+
+
+##########################################################################
+
+def print_student_grade_only(file_name):
+	f = codecs.open(file_name, 'w', encoding='utf-8')
+	f.write(u'%s\t%s\t%s\t%s\t\n'%('student_id', 'student_name', 'student_score', 'student_grade'))
+	for student_id in students:
+		student = students[student_id]
+		student_name = student['student_name']
+		student_score = student['student_score']
+		student_grade = student['student_grade']
+		f.write(u'%s\t%s\t%s\t%s\t\n'%(student_id, student_name, student_score, student_grade))
+	f.close()
+	print "== print_student_grade_only: %s =="%(file_name)
+
+def print_student_comments_in_one_file(file_name, title, show_score):
 	doc = Document()
-	pre = ''
-	document = Document(doc_name)
-	for post in document.paragraphs:
-		t = post.text.strip()
-		check(pre, t, doc, show_score)
-		pre = t
-	pprint.pprint(pa)
-	output(doc, pa, show_score)
-	doc.save(save_doc_name)
+	for student_id in students:
+		student = students[student_id]
+		student_name = student['student_name']
+		student_score = student['student_score']
+		student_grade = student['student_grade']
+		doc.add_heading(title, 0)
+		doc.add_heading(u'Student ID: %s, Student Name: %s'%(student_id, student_name), 1)
+		doc.add_heading(u'Final Grade: %s'%(student_grade), 1)
+		parts = student['parts']
+		for part_id in parts:
+			part_label = u'Part-%s'%(part_id)
+			part_score = parts[part_id]['score']
+			if (part_id == 4):
+				part_label = 'Overall'
+				part_score = student_score
+			if show_score == True:
+				doc.add_heading(u'%s: %s :'%(part_label, part_score), 2)
+			else:
+				doc.add_heading(u'%s: '%(part_label), 2)
+			doc.add_heading('Pseudo code', 4)
+			for c in parts[part_id]['pseudo_code']:
+				doc.add_paragraph(c, style='ListBullet2')
+			doc.add_heading('JS code', 4)
+			for c in parts[part_id]['js_code']:
+				doc.add_paragraph(c, style='ListBullet2')
+		doc.add_page_break()
+	doc.save(file_name)
+	print "== print_student_comments_in_one_file: %s =="%(file_name)
 
-def read_doc_txt(doc_name, save_doc_name, show_score):
-	doc = codecs.open(save_doc_name, 'w', encoding='utf-8')
-	pre = ''
-	document = Document(doc_name)
-	for post in document.paragraphs:
-		t = post.text.strip()
-		check_txt(pre, t, doc, show_score)
-		pre = t
-	pprint.pprint(pa)
-	output_txt(doc, pa, show_score)
-	doc.close()
+def print_student_comments_in_seperate_file(file_name_prefix, title, show_score):
+	for student_id in students:
+		student = students[student_id]
+		student_name = student['student_name']
+		student_score = student['student_score']
+		student_grade = student['student_grade']
+		doc = Document()
+		doc.add_heading(title, 0)
+		doc.add_heading(u'Student ID: %s, Student Name: %s'%(student_id, student_name), 1)
+		doc.add_heading(u'Final Grade: %s'%(student_grade), 1)
+		parts = student['parts']
+		for part_id in parts:
+			part_label = u'Part-%s'%(part_id)
+			part_score = parts[part_id]['score']
+			if (part_id == 4):
+				part_label = 'Overall'
+				part_score = student_score
+			if show_score == True:
+				doc.add_heading(u'%s: %s :'%(part_label, part_score), 2)
+			else:
+				doc.add_heading(u'%s: '%(part_label), 2)
+			doc.add_heading('Pseudo code', 4)
+			for c in parts[part_id]['pseudo_code']:
+				doc.add_paragraph(c, style='ListBullet2')
+			doc.add_heading('JS code', 4)
+			for c in parts[part_id]['js_code']:
+				doc.add_paragraph(c, style='ListBullet2')
+		doc.add_page_break()
+		file_name = u'%s%s.docx'%(file_name_prefix, student_id)
+		doc.save(file_name)
+		print "== print_student_comments_in_seperate_file: %s =="%(file_name)
 
-def read_doc_excel(doc_name, save_doc_name, show_score):
-	doc = codecs.open(save_doc_name, 'w', encoding='utf-8')
-	pre = ''
-	document = Document(doc_name)
-	for post in document.paragraphs:
-		t = post.text.strip()
-		check_excel(pre, t, doc, show_score)
-		pre = t
-	pprint.pprint(pa)
-	output_excel(doc, pa, show_score)
-	doc.close()
+
+def print_student_comments_to_email(file_name_prefix, email_title_prefix):
+	for student_id in students:
+		student = students[student_id]
+		student_name = student['student_name']
+		student_score = student['student_score']
+		student_grade = student['student_grade']
+		parts = student['parts']
+		parts_html = ''
+		for part_id in parts:
+			part_label = u'Part-%s'%(part_id)
+			if (part_id == 4):
+				part_label = 'Overall'
+				part_score = student_score
+			part_html_pseudo_code = ''
+			for c in parts[part_id]['pseudo_code']:
+				part_html_pseudo_code = u'%s<li>%s</li>'%(part_html_pseudo_code, c)
+			part_html_pseudo_code = u'<ul>%s</ul>'%(part_html_pseudo_code)
+			part_html_js_code = ''
+			for c in parts[part_id]['js_code']:
+				part_html_js_code = u'%s<li>%s</li>'%(part_html_js_code, c)
+			part_html_js_code = u'<ul>%s</ul>'%(part_html_js_code)
+			part_html = part_template%(part_label, part_html_pseudo_code, part_html_js_code)
+			parts_html = u'%s<br>%s'%(parts_html, part_html)
+		file_name = u'%s%s.docx'%(file_name_prefix, student_id)
+		email_body = email_template%(student_name, student_id, student_grade, parts_html)
+		email_title = u'Web-Based-Programing In-Class test results: %s'%(student_id)
+		#print email_body
+		send_email(email_title, email_body)
+		print "== print_student_comments_to_email: %s =="%(file_name)
+		return
+
+part_template = u'''
+<b>%s</b>
+<ul>Pseudo Code: 
+	<ul>%s</ul>
+</ul>
+<ul>JS Code: 
+	<ul>%s</ul>
+</ul>
+'''
+email_template = u'''
+To <b>%s</b>: <br>
+<br>
+Your student_id is <b>%s</b>, and your final grade is <b>%s</b> <br>
+<br>
+Bellow are your comments details: <br>
+%s
+'''
+def send_email(email_title, email_body):
+	mail_type = 'gmail' # or ntu
+	is_attachment = False
+	if mail_type == 'gmail':
+		smtp_server = 'smtp.gmail.com'
+		smtp_port = 587
+		address_from = 'xxxxxx@gmail.com'
+		username = 'xxx@gmail.com'
+		password = 'xxxx'
+	if mail_type == 'ntu':
+		smtp_server = 'smtpauth.ntu.ac.uk'
+		smtp_port = 25
+		address_from = 'xxx@ntu.ac.uk'
+		username = 'ads\xxx'
+		password = 'xxxx'
+	address_to = 'xxxx@ntu.ac.uk'
+	address_cc = 'xxxx@ntu.ac.uk'
+	msg = MIMEMultipart('alternative')
+	msg.set_charset('utf-8')
+	msg['FROM'] = address_from
+	msg['TO'] = address_to
+	msg['CC'] = address_cc
+	msg['Subject'] = email_title
+	part2 = MIMEText(email_body, 'html', 'utf-8')
+	msg.attach(part2)
+	if is_attachment == True:
+		### this is for attachment, disabled at moment
+		#part = MIMEBase('application', "octet-stream")
+		#part.set_payload(open('comments/H-N0491912.docx',"rb").read() )
+		#encoders.encode_base64(part)
+		#part.add_header('Content-Disposition', 'attachment; filename="H-N0491912.docx"')
+		#msg.attach(part)
+		#print msg
+		print 'no attachment now'
+	server = smtplib.SMTP(smtp_server, smtp_port)
+	server.ehlo()
+	server.starttls()
+	server.login(username, password)
+	server.sendmail(address_from, address_to, msg.as_string())
+	server.quit()
+
 
 if __name__ == "__main__":
-	'''
-	####
-	l = 0
-	current = 'p'
-	pa = {}
+	doc_level = 0
+	current = 'pseudo_code'
+	student = {}
 	doc_name = './Marking-Group-H.docx'
-	save_doc_name = 'H-With-Score.docx'
-	show_score = True
-	read_doc(doc_name, save_doc_name, show_score)
-	save_doc_name = 'H.docx'
-	show_score = False
-	read_doc(doc_name, save_doc_name, show_score)
-	####
-	l = 0
-	current = 'p'
-	pa = {}
-	doc_name = './Marking-Group-F.docx'
-	save_doc_name = 'F-With-Score.docx'
-	show_score = True
-	read_doc(doc_name, save_doc_name, show_score)
-	save_doc_name = 'F.docx'
-	show_score = False
-	read_doc(doc_name, save_doc_name, show_score)
-	####
-	l = 0
-	current = 'p'
-	pa = {}
-	doc_name = './Marking-Group-H.docx'
-	save_doc_name = 'H-With-Score.txt'
-	show_score = True
-	read_doc_txt(doc_name, save_doc_name, show_score)
-	####
-	l = 0
-	current = 'p'
-	pa = {}
-	doc_name = './Marking-Group-F.docx'
-	save_doc_name = 'F-With-Score.txt'
-	show_score = True
-	read_doc_txt(doc_name, save_doc_name, show_score)
-	####
-	'''
-	####
-	l = 0
-	current = 'p'
-	pa = {}
-	doc_name = './Marking-Group-H.docx'
-	save_doc_name = 'H-individual.txt'
-	show_score = True
-	read_doc_excel(doc_name, save_doc_name, show_score)
-	####
-	l = 0
-	current = 'p'
-	pa = {}
-	doc_name = './Marking-Group-F.docx'
-	save_doc_name = 'F-individual.txt'
-	show_score = True
-	read_doc_excel(doc_name, save_doc_name, show_score)
+	parse_docx(doc_name)
+	print_student_grade_only('H-grade.txt')
+	print_student_comments_in_one_file('H-comments_in_one_file_with_score.docx', 'Web-Based-Programing In-Class test result', True)
+	print_student_comments_in_one_file('H-comments_in_one_file.docx', 'Web-Based-Programing In-Class test result', False)
+	print_student_comments_in_seperate_file('comments/H-', 'Web-Based-Programing In-Class test result', False)
+	print_student_comments_to_email('comments/H-', 'Web-Based-Programing In-Class test result')
+
+
+# todo
+# remove personal info
+# make README.md file
+
 
 
