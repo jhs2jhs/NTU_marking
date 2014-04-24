@@ -216,6 +216,7 @@ def print_student_comments_in_seperate_file(file_name_prefix, title, show_score)
 
 
 def print_student_comments_to_email(file_name_prefix, email_title_prefix):
+	is_test = True
 	for student_id in students:
 		student = students[student_id]
 		student_name = student['student_name']
@@ -242,9 +243,16 @@ def print_student_comments_to_email(file_name_prefix, email_title_prefix):
 		email_body = email_template%(student_name, student_id, student_grade, parts_html)
 		email_title = u'Web-Based-Programing In-Class test results: %s'%(student_id)
 		#print email_body
-		send_email(email_title, email_body)
-		print "== print_student_comments_to_email: %s =="%(file_name)
-		return
+		if is_test == True:
+			address_to = 'jianhua.shao@ntu.ac.uk'
+			send_email(email_title, email_body, address_to)
+			print "== print_student_comments_to_email: %s =="%(file_name)
+			print "only in test"
+			sys.exit(1)
+		else:
+			address_to = '%s@ntu.ac.uk'%(student_id)
+			send_email(email_title, email_body, address_to)
+			print "== print_student_comments_to_email: %s =="%(file_name)
 
 part_template = u'''
 <b>%s</b>
@@ -263,23 +271,22 @@ Your student_id is <b>%s</b>, and your final grade is <b>%s</b> <br>
 Bellow are your comments details: <br>
 %s
 '''
-def send_email(email_title, email_body):
+def send_email(email_title, email_body, address_to):
 	mail_type = 'gmail' # or ntu
 	is_attachment = False
 	if mail_type == 'gmail':
 		smtp_server = 'smtp.gmail.com'
 		smtp_port = 587
-		address_from = 'xxxxxx@gmail.com'
-		username = 'xxx@gmail.com'
-		password = 'xxxx'
+		address_from = CONFIG.gmail_address_from
+		username = CONFIG.gmail_username
+		password = CONFIG.gmail_password
 	if mail_type == 'ntu':
-		smtp_server = 'smtpauth.ntu.ac.uk'
+		smtp_server = 'smtphost.ntu.ac.uk'
 		smtp_port = 25
-		address_from = 'xxx@ntu.ac.uk'
-		username = 'ads\xxx'
-		password = 'xxxx'
-	address_to = 'xxxx@ntu.ac.uk'
-	address_cc = 'xxxx@ntu.ac.uk'
+		address_from = CONFIG.ntu_address_from
+		username = CONFIG.ntu_username
+		password = CONFIG.ntu_password
+	address_cc = CONFIG.address_cc
 	msg = MIMEMultipart('alternative')
 	msg.set_charset('utf-8')
 	msg['FROM'] = address_from
@@ -303,6 +310,8 @@ def send_email(email_title, email_body):
 	server.login(username, password)
 	server.sendmail(address_from, address_to, msg.as_string())
 	server.quit()
+
+
 
 
 if __name__ == "__main__":
