@@ -11,6 +11,7 @@ from email.header import Header
 from email import encoders
 #import CONFIG_test as CONFIG
 import CONFIG as CONFIG
+from openpyxl import Workbook
 
 doc_level = 0
 current = 'pseudo_code'
@@ -316,6 +317,63 @@ def send_email(mail_type, email_title, email_body, address_to):
 	server.quit()
 
 
+def print_student_comments_to_one_excel(filename, group_name):
+	wb = Workbook()
+	ws = wb.create_sheet(1)
+	ws.title = group_name
+	j = 0
+	ws.cell(row=j, column=0).value = "student_id"
+	ws.cell(row=j, column=1).value = "student_name"
+	ws.cell(row=j, column=2).value = "student_grade"
+	ws.cell(row=j, column=3).value = "Part-A"
+	ws.cell(row=j, column=4).value = "Part-B"
+	ws.cell(row=j, column=5).value = "Part-C"
+	ws.cell(row=j, column=6).value = "Overall"
+	ws.cell(row=j, column=7).value = "Extra"
+	j = 1
+	for student_id in students:
+		#pprint.pprint(students[student_id])
+		#return
+		student = students[student_id]
+		student_name = student['student_name']
+		student_score = student['student_score']
+		student_grade = student['student_grade']
+		parts = student['parts']
+		parts_html = {}
+		for part_id in parts:
+			part_label = u'Part-%s'%(part_id)
+			if (part_id == 4):
+				part_label = 'Overall'
+				part_score = student_score
+			part_html_pseudo_code = 'COMMENTS FOR PSEUDO CODE: '
+			i = 0
+			for c in parts[part_id]['pseudo_code']:
+				i = i + 1
+				part_html_pseudo_code = u'%s %s) %s'%(part_html_pseudo_code, i, c)
+			#part_html_pseudo_code = u'<ul>%s</ul>'%(part_html_pseudo_code)
+			part_html_js_code = 'COMMENTS FOR JS CODE: '
+			i = 0
+			for c in parts[part_id]['js_code']:
+				i = i + 1
+				part_html_js_code = u'%s %s) %s'%(part_html_js_code, i, c)
+			#part_html_js_code = u'<ul>%s</ul>'%(part_html_js_code)
+			part_html = u'%s. %s'%(part_html_pseudo_code, part_html_js_code)
+			parts_html[part_id] = part_html
+		#pprint.pprint(parts_html)
+		#print
+		extra = u'You are awarded a %s'%(student_grade)
+		ws.cell(row=j, column=0).value = student_id
+		ws.cell(row=j, column=1).value = student_name
+		ws.cell(row=j, column=2).value = student_grade
+		ws.cell(row=j, column=3).value = parts_html[1]
+		ws.cell(row=j, column=4).value = parts_html[2]
+		ws.cell(row=j, column=5).value = parts_html[3]
+		ws.cell(row=j, column=6).value = parts_html[4]
+		ws.cell(row=j, column=7).value = extra
+		j = j + 1
+	wb.save(filename)
+
+
 def main_in_group(doc_name, group_name):
 	doc_level = 0
 	current = 'pseudo_code'
@@ -325,10 +383,12 @@ def main_in_group(doc_name, group_name):
 	print_student_comments_in_one_file('./output_files/'+group_name+'-comments_in_one_file_with_score.docx', 'Web-Based-Programing In-Class test result', True)
 	print_student_comments_in_one_file('./output_files/'+group_name+'-comments_in_one_file.docx', 'Web-Based-Programing In-Class test result', False)
 	print_student_comments_in_seperate_file('./comments/'+group_name+'-', 'Web-Based-Programing In-Class test result', False)
+	print_student_comments_to_one_excel('./output_files/'+group_name+'.xlsx', group_name)
 	### ready to send email
-	send_email_in_test = True   ############### make sure you changed here ##################
-	mail_type = 'ntu' # or ntu ############### make sure you changed here ##################
-	print_student_comments_to_email('./comments/'+group_name+'-', 'Web-Based-Programing In-Class test result', send_email_in_test, mail_type)
+	#send_email_in_test = True   ############### make sure you changed here ##################
+	#mail_type = 'ntu' # or ntu ############### make sure you changed here ##################
+	#print_student_comments_to_email('./comments/'+group_name+'-', 'Web-Based-Programing In-Class test result', send_email_in_test, mail_type)
+	
 
 
 if __name__ == "__main__":
